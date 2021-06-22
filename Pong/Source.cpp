@@ -2,120 +2,40 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include "Classes.h"
 
-static const sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
-static const sf::Vector2f middleOfScreen = sf::Vector2f(desktopMode.width / 2, desktopMode.height / 2);
-static const float playerSpeed = 18.f;
-static const float ballSpeed = 3.8f;
+const char titleOfGame[] = "Pong (C++)";
 
-template <typename T> static void RenderVector(sf::RenderWindow& windowl, std::vector<T>& vector);
-template <typename T> static void Draw(T vArray, std::vector<T>& vector);
-static sf::VertexArray getQuad(sf::Vector2f pos, sf::Vector2f size);
+// Predefine variables and functions (prototypes)
+const sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
+const sf::Vector2f middleOfScreen = sf::Vector2f(desktopMode.width / 2, desktopMode.height / 2);
+const float playerSpeed = 15.f;
+const float ballSpeed = 3.5f;
+
 static sf::CircleShape getCircle(sf::Vector2f pos, float radius);
+static sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y);
+static sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr);
 static int random(int min, int max);
+template<typename T> void render(T obj, sf::RenderWindow& rw);
+void resetGame(player& p1, player& p2, ball& b, const sf::Vector2f& p1StartPos
+	, const sf::Vector2f& p2StartPos);
 
-static struct bindingY
-{
-	sf::Keyboard::Key yUp;
-	sf::Keyboard::Key yDown;
-	bindingY(sf::Keyboard::Key u = sf::Keyboard::Key::W, sf::Keyboard::Key d = sf::Keyboard::Key::S)
-	{
-		yUp = u;
-		yDown = d;
-	}
-};
+////////////////////////////////////////////////////////////////////
+/// Start of Main
+////////////////////////////////////////////////////////////////////
 
-static class ball
-{
-public:
-	sf::Vector2f pos;
-	float xVelocity = ballSpeed;
-	float yVelocity = ballSpeed;
-
-	void resetVelocity()
-	{
-		switch (random(1, 3))
-		{
-		case 1:
-			xVelocity = -xVelocity;
-		case 2:
-			yVelocity = -yVelocity;
-		case 3:
-			xVelocity = -xVelocity;
-			yVelocity = -yVelocity;
-		}
-	}
-
-	ball()
-	{
-		resetVelocity();
-		pos = middleOfScreen;
-	}
-
-	void update()
-	{
-		pos += sf::Vector2f(xVelocity, yVelocity) * ballSpeed;
-	}
-};
-
-static class player
-{
-public:
-
-	sf::Vector2f pos;
-	void move(sf::Vector2f incFactor)
-	{
-		pos += incFactor;
-	};
-
-	bool nControl;
-	unsigned int score = 0;
-	bindingY bindings;
-
-	bool canGoUp()
-	{
-		if (pos.y - 80 > 0)
-			return true;
-		else return false;
-	}
-
-	bool canGoDown()
-	{
-		if (pos.y + 80 < desktopMode.height)
-			return true;
-		else return false;
-	}
-
-	player(sf::Vector2f p = middleOfScreen, bool normalControl = true)
-	{
-		pos = p;
-		nControl = normalControl;
-		if (!nControl)
-		{
-			bindings.yDown = sf::Keyboard::Key::Down;
-			bindings.yUp = sf::Keyboard::Key::Up;
-		}
-	}
-
-};
-
-// Start of program
 int main()
 {
 
-	// Var declerations and the creation of window
+	// Creates window
 	sf::RenderWindow mainWindow;
-	std::vector<sf::VertexArray> playerRenders;
-	std::vector<sf::CircleShape> circleRenders;
-	std::vector<sf::Text> textRenders;
-	mainWindow.create(sf::VideoMode(desktopMode.width, desktopMode.height), "Pong", sf::Style::Fullscreen);
+	mainWindow.create(sf::VideoMode(desktopMode.width, desktopMode.height), titleOfGame, sf::Style::Fullscreen);
 	mainWindow.setFramerateLimit(60);
 	mainWindow.setVerticalSyncEnabled(true);
 
 	// Load font (ARIAL)
 	// First attempts to find fond from windows fonts. If it cant find it there, it will
 	// look in the folder the exe is inside.
-
 	sf::Font mainFont;
 	if (!mainFont.loadFromFile("C:/Windows/fonts/arial.ttf"))
 	{
@@ -126,12 +46,19 @@ int main()
 		}
 	}
 
-	player p1(middleOfScreen - sf::Vector2f((desktopMode.width / 2) - 100, 0), true);
-	player p2(middleOfScreen + sf::Vector2f((desktopMode.width / 2) - 100, 0), false);
-	ball mainBall;
+	// Create the 2 players and the ball class as well as any other renderable instances
+	const sf::Vector2f p1StartPos = middleOfScreen - sf::Vector2f((desktopMode.width / 2) - 100, 0);
+	const sf::Vector2f p2StartPos = middleOfScreen + sf::Vector2f((desktopMode.width / 2) - 100, 0);
+	player p1(p1StartPos, getRectangle(p1StartPos, 7, 120));
+	player p2(p2StartPos, getRectangle(p2StartPos, 7, 120));
+	ball mainBall(getCircle(middleOfScreen, 10));
+	sf::Text title = getText(middleOfScreen - sf::Vector2f(0, 40), mainFont, titleOfGame);
+	title.setCharacterSize(25);
 
 	while (mainWindow.isOpen())
 	{
+
+		// Event handler
 		sf::Event mainEvent;
 		if (mainWindow.pollEvent(mainEvent))
 		{
@@ -143,36 +70,35 @@ int main()
 		}
 
 		// Player 1 movement handler
-		if (sf::Keyboard::isKeyPressed(p1.bindings.yUp) && p1.canGoUp())
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && p1.canGoUp())
 		{
 			p1.move(sf::Vector2f(0, -playerSpeed));
 		}
-		else if (sf::Keyboard::isKeyPressed(p1.bindings.yDown) && p1.canGoDown())
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && p1.canGoDown())
 		{
 			p1.move(sf::Vector2f(0, playerSpeed));
 		}
 
 		// Player 2 movement handler
-		if (sf::Keyboard::isKeyPressed(p2.bindings.yUp) && p2.canGoUp())
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) && p2.canGoUp())
 		{
 			p2.move(sf::Vector2f(0, -playerSpeed));
 		}
-		else if (sf::Keyboard::isKeyPressed(p2.bindings.yDown) && p2.canGoDown())
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) && p2.canGoDown())
 		{
 			p2.move(sf::Vector2f(0, playerSpeed));
 		}
 
 		// Handle ball physics and rebounding
-		if (mainBall.pos.x <= 0 || mainBall.pos.x >= desktopMode.width)
+		if (mainBall.pos.x <= 0)
 		{
-			p1.pos = middleOfScreen - sf::Vector2f((desktopMode.width / 2) - 100, 0);
-			p2.pos = middleOfScreen + sf::Vector2f((desktopMode.width / 2) - 100, 0);
-			mainBall.pos = middleOfScreen;
-			mainBall.resetVelocity();
-			//std::this_thread::sleep_for(std::chrono::seconds(1));
-
-			p1.score = 0;
-			p2.score = 0;
+			p2.score++;
+			resetGame(p1, p2, mainBall, p1StartPos, p2StartPos);
+		}
+		if (mainBall.pos.x >= desktopMode.width)
+		{
+			p1.score++;
+			resetGame(p1, p2, mainBall, p1StartPos, p2StartPos);
 		}
 
 		if (mainBall.pos.y <= 0 || mainBall.pos.y >= desktopMode.height)
@@ -186,70 +112,49 @@ int main()
 			*/
 		}
 
-		mainWindow.clear(sf::Color::Black);
+		// Update objects for rendering
 		mainBall.update();
-
-		Draw<sf::VertexArray>(getQuad(p1.pos, sf::Vector2f(5, 80)), playerRenders);
-		Draw<sf::VertexArray>(getQuad(p2.pos, sf::Vector2f(5, 80)), playerRenders);
-		Draw<sf::CircleShape>(getCircle(mainBall.pos, 10), circleRenders);
-
-		// Process scoreboard
-		sf::Text scoreBoard;
-		scoreBoard.setFont(mainFont);
-		scoreBoard.setString(std::to_string(p1.score) + " | " + std::to_string(p2.score));
-		scoreBoard.setOrigin(scoreBoard.getLocalBounds().width / 2, scoreBoard.getLocalBounds().height / 2);
-		scoreBoard.setPosition(middleOfScreen);
-		Draw<sf::Text>(scoreBoard, textRenders);
+		mainBall.shape.setPosition(mainBall.pos);
+		p1.shape.setPosition(p1.pos);
+		p2.shape.setPosition(p2.pos);
 
 		// Handles collision with the sticks
-		sf::FloatRect gPosofBall = circleRenders[0].getGlobalBounds();
-		if (gPosofBall.intersects(playerRenders[0].getBounds()))
+		sf::FloatRect gPosofBall = mainBall.shape.getGlobalBounds();
+		if (gPosofBall.intersects(p1.shape.getGlobalBounds())
+			|| gPosofBall.intersects(p2.shape.getGlobalBounds()))
 		{
 			mainBall.xVelocity = -mainBall.xVelocity;
-			p1.score++;
 		}
 
-		if (gPosofBall.intersects(playerRenders[1].getBounds()))
-		{
-			mainBall.xVelocity = -mainBall.xVelocity;
-			p2.score++;
-		}
+		// Render onto screen
+		mainWindow.clear(sf::Color::Black);
 
-		RenderVector<sf::VertexArray>(mainWindow, playerRenders);
-		RenderVector<sf::CircleShape>(mainWindow, circleRenders);
-		RenderVector<sf::Text>(mainWindow, textRenders);
+		render<sf::CircleShape>(mainBall.shape, mainWindow);
+		render<sf::RectangleShape>(p1.shape, mainWindow);
+		render<sf::RectangleShape>(p2.shape, mainWindow);
+
+		std::string scoreBoardDisplay = std::to_string(p1.score) + " | " + std::to_string(p2.score);
+		sf::Text scoreBoard = getText(middleOfScreen, mainFont, scoreBoardDisplay);
+		render<sf::Text>(scoreBoard, mainWindow);
+		render<sf::Text>(title, mainWindow);
+
 		mainWindow.display();
 	}
 
 	return 0;
 }
 
-template <typename T>
-static void RenderVector(sf::RenderWindow& window, std::vector<T>& vector)
-{
-	typename std::vector<T>::iterator vectorIt = vector.begin();
-	for (; vectorIt != vector.end(); vectorIt++)
-	{
-		window.draw(*vectorIt);
-	}
-	std::vector<T> tempVector;
-	vector = tempVector;
-}
+////////////////////////////////////////////////////////////////////
+/// Function Definitions
+////////////////////////////////////////////////////////////////////
 
-template <typename T >
-static void Draw(T obj, std::vector<T>& vector)
+static sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y)
 {
-	vector.push_back(obj);
-}
-
-static sf::VertexArray getQuad(sf::Vector2f pos, sf::Vector2f size)
-{
-	sf::VertexArray VArr(sf::Quads, (unsigned)4);
-	VArr[0].position = pos + sf::Vector2f(-(size.x), -(size.y));
-	VArr[1].position = pos + sf::Vector2f(size.x, -(size.y));
-	VArr[2].position = pos + sf::Vector2f(size.x, size.y);
-	VArr[3].position = pos + sf::Vector2f(-(size.x), size.y);
-	return VArr;
+	sf::RectangleShape rectangle;
+	rectangle.setPosition(pos);
+	rectangle.setSize(sf::Vector2f(x, y));
+	rectangle.setFillColor(sf::Color::White);
+	return rectangle;
 }
 
 static sf::CircleShape getCircle(sf::Vector2f pos, float radius)
@@ -261,9 +166,34 @@ static sf::CircleShape getCircle(sf::Vector2f pos, float radius)
 	return circle;
 }
 
+sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr)
+{
+	sf::Text text;
+	text.setFont(font);
+	text.setString(textStr);
+	text.setOrigin(text.getLocalBounds().width / 2, text.getLocalBounds().height / 2);
+	text.setPosition(pos);
+	return text;
+}
+
 static int random(int min, int max)
 {
 	std::default_random_engine gen(std::random_device{}());
 	std::uniform_int_distribution<int> dist(min, max);
 	return dist(gen);
+}
+
+template <typename T>
+void render(T obj, sf::RenderWindow& rw)
+{
+	rw.draw(obj);
+}
+
+void resetGame(player& p1, player& p2, ball& b, const sf::Vector2f &p1StartPos
+	, const sf::Vector2f& p2StartPos)
+{
+	p1.pos = p1StartPos;
+	p2.pos = p2StartPos;
+	b.pos = middleOfScreen;
+	b.resetVelocity();
 }
