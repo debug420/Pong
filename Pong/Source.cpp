@@ -4,7 +4,7 @@
 #include <random>
 #include "Classes.h"
 
-const char titleOfGame[] = "Pong (C++)";
+const std::string titleOfGame = "Pong (C++)";
 
 // Predefine variables and functions (prototypes)
 const sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
@@ -12,11 +12,10 @@ const sf::Vector2f middleOfScreen = sf::Vector2f(desktopMode.width / 2, desktopM
 const float playerSpeed = 15.f;
 const float ballSpeed = 3.5f;
 
-static sf::CircleShape getCircle(sf::Vector2f pos, float radius);
-static sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y);
-static sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr);
-static int random(int min, int max);
-template<typename T> void render(T obj, sf::RenderWindow& rw);
+sf::CircleShape getCircle(sf::Vector2f pos, float radius);
+sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y);
+sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr);
+int random(int min, int max);
 void resetGame(player& p1, player& p2, ball& b, const sf::Vector2f& p1StartPos
 	, const sf::Vector2f& p2StartPos);
 
@@ -49,11 +48,18 @@ int main()
 	// Create the 2 players and the ball class as well as any other renderable instances
 	const sf::Vector2f p1StartPos = middleOfScreen - sf::Vector2f((desktopMode.width / 2) - 100, 0);
 	const sf::Vector2f p2StartPos = middleOfScreen + sf::Vector2f((desktopMode.width / 2) - 100, 0);
+	//--------------------------------------------------------//
 	player p1(p1StartPos, getRectangle(p1StartPos, 7, 120));
 	player p2(p2StartPos, getRectangle(p2StartPos, 7, 120));
 	ball mainBall(getCircle(middleOfScreen, 10));
+	//--------------------------------------------------------//
+	sf::Text scoreBoard = getText(middleOfScreen, mainFont, "0 | 0");
 	sf::Text title = getText(middleOfScreen - sf::Vector2f(0, 40), mainFont, titleOfGame);
 	title.setCharacterSize(25);
+
+	////////////////////////////////////////////////////////////////////
+	/// Main Loop
+	////////////////////////////////////////////////////////////////////
 
 	while (mainWindow.isOpen())
 	{
@@ -66,8 +72,11 @@ int main()
 			{
 			case sf::Event::Closed:
 				mainWindow.close();
+				break;
 			}
 		}
+
+		//--------------------------------------------------------//
 
 		// Player 1 movement handler
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && p1.canGoUp())
@@ -89,7 +98,9 @@ int main()
 			p2.move(sf::Vector2f(0, playerSpeed));
 		}
 
+		//--------------------------------------------------------//
 		// Handle ball physics and rebounding
+
 		if (mainBall.pos.x <= 0)
 		{
 			p2.score++;
@@ -112,11 +123,13 @@ int main()
 			*/
 		}
 
+		//--------------------------------------------------------//
 		// Update objects for rendering
 		mainBall.update();
 		mainBall.shape.setPosition(mainBall.pos);
 		p1.shape.setPosition(p1.pos);
 		p2.shape.setPosition(p2.pos);
+		scoreBoard.setString(std::to_string(p1.score) + " | " + std::to_string(p2.score));
 
 		// Handles collision with the sticks
 		sf::FloatRect gPosofBall = mainBall.shape.getGlobalBounds();
@@ -126,17 +139,15 @@ int main()
 			mainBall.xVelocity = -mainBall.xVelocity;
 		}
 
+		//--------------------------------------------------------//
 		// Render onto screen
 		mainWindow.clear(sf::Color::Black);
 
-		render<sf::CircleShape>(mainBall.shape, mainWindow);
-		render<sf::RectangleShape>(p1.shape, mainWindow);
-		render<sf::RectangleShape>(p2.shape, mainWindow);
-
-		std::string scoreBoardDisplay = std::to_string(p1.score) + " | " + std::to_string(p2.score);
-		sf::Text scoreBoard = getText(middleOfScreen, mainFont, scoreBoardDisplay);
-		render<sf::Text>(scoreBoard, mainWindow);
-		render<sf::Text>(title, mainWindow);
+		mainWindow.draw(mainBall.shape);
+		mainWindow.draw(p1.shape);
+		mainWindow.draw(p2.shape);
+		mainWindow.draw(scoreBoard);
+		mainWindow.draw(title);
 
 		mainWindow.display();
 	}
@@ -148,7 +159,7 @@ int main()
 /// Function Definitions
 ////////////////////////////////////////////////////////////////////
 
-static sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y)
+sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y)
 {
 	sf::RectangleShape rectangle;
 	rectangle.setPosition(pos);
@@ -157,7 +168,7 @@ static sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y)
 	return rectangle;
 }
 
-static sf::CircleShape getCircle(sf::Vector2f pos, float radius)
+sf::CircleShape getCircle(sf::Vector2f pos, float radius)
 {
 	sf::CircleShape circle;
 	circle.setRadius(radius);
@@ -176,17 +187,11 @@ sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr)
 	return text;
 }
 
-static int random(int min, int max)
+int random(int min, int max)
 {
 	std::default_random_engine gen(std::random_device{}());
 	std::uniform_int_distribution<int> dist(min, max);
 	return dist(gen);
-}
-
-template <typename T>
-void render(T obj, sf::RenderWindow& rw)
-{
-	rw.draw(obj);
 }
 
 void resetGame(player& p1, player& p2, ball& b, const sf::Vector2f &p1StartPos
