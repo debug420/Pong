@@ -2,9 +2,12 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include <TGUI/TGUI.hpp>
+
+#include "TGUI.h"
 #include "Classes.h"
 
-const std::string titleOfGame = "Pong (C++)";
+const std::string titleOfGame = "Pong";
 
 // Predefine variables and functions (prototypes)
 const sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
@@ -14,6 +17,7 @@ const float ballSpeed = 3.5f;
 
 sf::CircleShape getCircle(sf::Vector2f pos, float radius);
 sf::RectangleShape getRectangle(sf::Vector2f pos, float x, float y);
+void centerTextOrigin(sf::Text& text, sf::Vector2f pos);
 sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr);
 int random(int min, int max);
 void resetGame(player& p1, player& p2, ball& b, const sf::Vector2f& p1StartPos
@@ -45,6 +49,11 @@ int main()
 		}
 	}
 
+	tgui::GuiSFML mainTGUI;
+	mainTGUI.setTarget(mainWindow);
+	initTGUI(mainTGUI);
+	unpauseGame(mainTGUI);
+
 	// Create the 2 players and the ball class as well as any other renderable instances
 	const sf::Vector2f p1StartPos = middleOfScreen - sf::Vector2f((desktopMode.width / 2) - 100, 0);
 	const sf::Vector2f p2StartPos = middleOfScreen + sf::Vector2f((desktopMode.width / 2) - 100, 0);
@@ -68,11 +77,18 @@ int main()
 		sf::Event mainEvent;
 		if (mainWindow.pollEvent(mainEvent))
 		{
+
+			mainTGUI.handleEvent(mainEvent);
 			switch (mainEvent.type)
 			{
 			case sf::Event::Closed:
 				mainWindow.close();
 				break;
+			case sf::Event::KeyReleased:
+				if (mainEvent.key.code == sf::Keyboard::Escape)
+				{
+					paused ? unpauseGame(mainTGUI) : pauseGame(mainTGUI);
+				}
 			}
 		}
 
@@ -125,11 +141,19 @@ int main()
 
 		//--------------------------------------------------------//
 		// Update objects for rendering
-		mainBall.update();
-		mainBall.shape.setPosition(mainBall.pos);
-		p1.shape.setPosition(p1.pos);
-		p2.shape.setPosition(p2.pos);
-		scoreBoard.setString(std::to_string(p1.score) + " | " + std::to_string(p2.score));
+		if (!paused)
+		{
+
+			mainBall.update();
+			mainBall.shape.setPosition(mainBall.pos);
+			p1.shape.setPosition(p1.pos);
+			p2.shape.setPosition(p2.pos);
+
+			scoreBoard.setString(std::to_string(p1.score) + " | " + std::to_string(p2.score));
+			centerTextOrigin(scoreBoard, middleOfScreen);
+			centerTextOrigin(title, middleOfScreen - sf::Vector2f(0, 40));
+
+		}
 
 		// Handles collision with the sticks
 		sf::FloatRect gPosofBall = mainBall.shape.getGlobalBounds();
@@ -148,6 +172,7 @@ int main()
 		mainWindow.draw(p2.shape);
 		mainWindow.draw(scoreBoard);
 		mainWindow.draw(title);
+		mainTGUI.draw();
 
 		mainWindow.display();
 	}
@@ -177,13 +202,18 @@ sf::CircleShape getCircle(sf::Vector2f pos, float radius)
 	return circle;
 }
 
+void centerTextOrigin(sf::Text& text, sf::Vector2f pos)
+{
+	text.setOrigin(text.getLocalBounds().width / 2, text.getLocalBounds().height / 2);
+	text.setPosition(pos);
+}
+
 sf::Text getText(sf::Vector2f pos, sf::Font &font, std::string textStr)
 {
 	sf::Text text;
 	text.setFont(font);
 	text.setString(textStr);
-	text.setOrigin(text.getLocalBounds().width / 2, text.getLocalBounds().height / 2);
-	text.setPosition(pos);
+	centerTextOrigin(text, pos);
 	return text;
 }
 

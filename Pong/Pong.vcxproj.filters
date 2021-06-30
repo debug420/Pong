@@ -23,5 +23,8 @@
     <ClInclude Include="Classes.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="TGUI.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -25,7 +25,7 @@ public:
 	// ball methods
 	void resetVelocity()
 	{
-		/*switch (random(1, 3))
+		switch (random(1, 3))
 		{
 		case 1:
 			xVelocity = -xVelocity;
@@ -34,12 +34,12 @@ public:
 		case 3:
 			xVelocity = -xVelocity;
 			yVelocity = -yVelocity;
-		}*/
+		}
 	}
 
 	void update()
 	{
-		//pos += sf::Vector2f(xVelocity, yVelocity) * ballSpeed;
+		pos += sf::Vector2f(xVelocity, yVelocity) * ballSpeed;
 	}
 
 	ball(sf::CircleShape circle)
