@@ -39,9 +39,9 @@ void initTGUI(tgui::GuiSFML &gui)
 	pausePanel->setPosition("50%", "50%");
 	pausePanel->setOrigin(0.5, 0.5);
 	pausePanel->getRenderer()->setBackgroundColor({ 20, 20, 20 });
-	pausePanel->add(resumeButton);
-	pausePanel->add(pausedText);
 	pausePanel->add(creditText);
+	pausePanel->add(pausedText);
+	pausePanel->add(resumeButton);
 
 	gui.add(pausePanel, "panel");
 }
