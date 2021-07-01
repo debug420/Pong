@@ -20,7 +20,7 @@ void initTGUI(tgui::GuiSFML &gui)
 		"Github Rep Link: \nhttps:\/\/github.com\/debug420\/Pong"
 	);
 
-	//resumeButton->setPosition(150, 220);
+	resumeButton->setPosition("50%", 220);
 	resumeButton->setSize("90%", 40);
 	resumeButton->setOrigin(0.5, 0.5);
 	resumeButton->onMouseRelease([&]() { unpauseGame(gui); });
